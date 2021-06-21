@@ -47,18 +47,6 @@ public class BeerService {
         beerRepository.deleteById(id);
     }
 
-    private void verifyIfIsAlreadyRegistered(String name) throws BeerAlreadyRegisteredException {
-        Optional<Beer> optSavedBeer = beerRepository.findByName(name);
-        if (optSavedBeer.isPresent()) {
-            throw new BeerAlreadyRegisteredException(name);
-        }
-    }
-
-    private Beer verifyIfExists(Long id) throws BeerNotFoundException {
-        return beerRepository.findById(id)
-                .orElseThrow(() -> new BeerNotFoundException(id));
-    }
-
     public BeerDTO increment(Long id, int quantityToIncrement) throws BeerNotFoundException, BeerStockExceededException {
         Beer beerToIncrementStock = verifyIfExists(id);
         int quantityAfterIncrement = quantityToIncrement + beerToIncrementStock.getQuantity();
@@ -70,5 +58,30 @@ public class BeerService {
             return beerMapper.toDTO(incrementedBeerStock);
         }
         throw new BeerStockExceededException(id, quantityToIncrement);
+    }
+
+    public BeerDTO decrement(Long id, int quantityToDecrement) throws BeerNotFoundException, BeerStockExceededException {
+        Beer beerToIncrementStock = verifyIfExists(id);
+        int quantityAfterDecrement = beerToIncrementStock.getQuantity() - quantityToDecrement;
+
+        if (quantityAfterDecrement >= 0) {
+            beerToIncrementStock.setQuantity(beerToIncrementStock.getQuantity() - quantityToDecrement);
+            Beer incrementedBeerStock = beerRepository.save(beerToIncrementStock);
+
+            return beerMapper.toDTO(incrementedBeerStock);
+        }
+        throw new BeerStockExceededException(id, quantityToDecrement);
+    }
+
+    private void verifyIfIsAlreadyRegistered(String name) throws BeerAlreadyRegisteredException {
+        Optional<Beer> optSavedBeer = beerRepository.findByName(name);
+        if (optSavedBeer.isPresent()) {
+            throw new BeerAlreadyRegisteredException(name);
+        }
+    }
+
+    private Beer verifyIfExists(Long id) throws BeerNotFoundException {
+        return beerRepository.findById(id)
+                .orElseThrow(() -> new BeerNotFoundException(id));
     }
 }
